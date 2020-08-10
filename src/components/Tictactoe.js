@@ -1,44 +1,31 @@
 import React, {useState} from 'react';
 
-const spaces = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 const gameStateReady = "";
 const gameStatePlayerWin = "You won!";
 const gameStatCPUWin = "You lost!";
 
 export default function Tictactoe() {
-    const [playerSquares, setPlayerSquares] = useState([]);
-    const [CPUSquares, setCPUSquares] = useState([]);
+    const [gameSpaces, setGameSpaces] = useState([0,0,0,0,0,0,0,0,0]);
     const [gameState, setGameState] = useState(gameStateReady);
 
     function textFor(tile){
-        if(playerSquares.includes(tile)) return "X";
-        if(CPUSquares.includes(tile)) return "O";
-        return " ";
+        if(gameSpaces[tile] > 0) return "X"; // player space
+        if(gameSpaces[tile] < 0) return "O"; // CPU space
+        return " "; // unclaimed space
     }
 
     function resetGame(){
-        setPlayerSquares([]);
-        setCPUSquares([]);
+        setGameSpaces([0,0,0,0,0,0,0,0,0]);
         setGameState(gameStateReady);
     }
 
-    function clickable(tile){
-        if(playerSquares.includes(tile)) return false;
-        if(CPUSquares.includes(tile)) return false;
+    function clickable(tile, currentSpaces = gameSpaces){
+        if(currentSpaces[tile] !== 0) return false;
         return gameState === gameStateReady;
     }
 
-    function checkGameState(newPlayerSquares){
-        // there are 8 winning combinations: 3 rows, 3 columns, and 2 diagonals
-        const wins = [0, 0, 0, 0, 0, 0, 0, 0]
-
-        //console.log(newPlayerSquares);
-        newPlayerSquares.forEach(tile => {
-            wins[Math.floor(tile/3)] += 1; // 0-2 = row 0, 3-5 = row 1, 6-8 = row 2
-            wins[tile % 3 + 3] += 1; // 0/3/6 = column 0, 1/4/7 = column 1, 2/5/8 = column 2
-            if(tile % 4 === 0) wins[6] += 1; // tiles 0, 4, 8
-            if(tile === 2 || tile === 4 || tile === 6) wins[7] += 1; // I couldn't come up with a clever pattern for this one
-        });
+    function checkGameState(currentSpaces){
+        const wins = winProgress(currentSpaces);
 
         //console.log(wins);
         for(let i = 0; i < wins.length; i++){
@@ -46,18 +33,41 @@ export default function Tictactoe() {
                 //console.log("player wins");
                 setGameState(gameStatePlayerWin);
             }
+            else if(wins[i] === -3){
+                setGameState(gameStatCPUWin);
+            }
         }
+    }
+
+    function winProgress(currentSpaces){
+        // there are 8 winning combinations: 3 rows, 3 columns, and 2 diagonals
+        const wins = [0, 0, 0, 0, 0, 0, 0, 0];
+        
+        // for each space, adds 1 to the wins that contain that space if player-claimed, -1 if CPU-claimed, 0 if unclaimed
+        currentSpaces.forEach((value, tile) => {
+            wins[Math.floor(tile/3)] += value; // 0-2 = row 0, 3-5 = row 1, 6-8 = row 2
+            wins[tile % 3 + 3] += value; // 0/3/6 = column 0, 1/4/7 = column 1, 2/5/8 = column 2
+            if(tile % 4 === 0) wins[6] += value; // tiles 0, 4, 8
+            if(tile === 2 || tile === 4 || tile === 6) wins[7] += value; // I couldn't come up with a clever pattern for this one
+        });
+
+        return wins;
     }
 
     function playerClickOn(tile){
         if(!clickable(tile)) return;
-        const newPlayerSquares = [...playerSquares, tile];  // according to my research (=5 minutes on google) setState is asynchronous,
-        setPlayerSquares(newPlayerSquares);                 // so it's not guaranteed to be updated when we call checkGameState later on
+        const currentSpaces = [...gameSpaces]; // be sure to make a copy via spreading, very important
+        currentSpaces[tile] = 1;
+        // according to my research (=5 minutes on google) setState is asynchronous, so an updated gameSpaces
+        //   is not guaranteed to be updated when we call checkGameState later on. Sending the updated, 
+        //   non-stateful list to checkGameState makes sure that it's up to date.
+
         // CPU turn...
 
-        // check gamestate
-        checkGameState(newPlayerSquares);
-        // explicitly sending the updated, non-stateful list of squares to checkGameState makes sure it accounts for this turn
+        // end CPU turn
+
+        setGameSpaces(currentSpaces);
+        checkGameState(currentSpaces);
     }
 
     return (
@@ -66,7 +76,7 @@ export default function Tictactoe() {
             <p>Click on a square to begin.</p>
             <div className="board">
                 {
-                    spaces.map(tile =>
+                    gameSpaces.map((value, tile) =>
                     <div
                         id={tile}
                         key={tile}
