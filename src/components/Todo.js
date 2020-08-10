@@ -10,9 +10,9 @@ export default function Todo() {
         console.log(todoItems);
     }
 
-    function removeItem(description){
+    function removeItem(id){
         // This is React-safe because .filter() returns a new array; todoItems is unaffected
-        setTodoItems(todoItems.filter(item => item.description !== description));
+        setTodoItems(todoItems.filter(item => item.id !== id));
     }
 
     function addItemFromInput(){
@@ -38,9 +38,9 @@ export default function Todo() {
                 todoItems.map(item =>
                     <div key={item.id}>
                         {item.description}
-                        <button>Remove</button>
+                        <button onClick = {() => removeItem(item.id)}>Remove</button>
                     </div>
-                    )
+                )
             }
         </div>  
     )
