@@ -11,7 +11,7 @@ We can only feature one awesome programmer at a time.
 Find comments below to help you along.
 */
 
-import React from 'react';
+import React, {useState} from 'react';
 
 // Use this variable ONLY to initialize a slice of state!
 // There is something in the JSX right now breaking this rule.
@@ -27,12 +27,23 @@ const listOfAwesome = [
 export default function Programmers() {
   // We'll have to use the state hook twice, as we need two slices of state.
   // The programmers on the one hand, and the id of the featured programmer on the other.
+  const [programmers, setProgrammers] = useState(listOfAwesome);
+  const [featured, setFeatured] = useState(undefined);
 
   const getNameOfFeatured = () => {
     // This is not an event handler but a helper function. See its usage below.
     // It's going to need information from both slices of state!
     // Using the currently celebrated id, find inside the programmers slice of state
     // the _name_ of the currently celebrated programmer, and return it.
+
+    // This is where a LINQ .First() would come in handy. You could do this as a one-liner in LINQ.
+    // Granted, that's true of a disorienting variety of functions.
+
+    for(let i = 0; i < programmers.length; i++)
+    {
+      if(programmers[i].id === featured) return programmers[i].name;
+    }
+    return undefined;
   };
 
   const style = {
@@ -49,9 +60,9 @@ export default function Programmers() {
           /* Nasty bug! We should map over a slice of state, instead of 'listOfAwesome'.
           We might say: "it works, though!" But if the list of programmers is not state,
           we could never add or edit programmers in the future. The list would be a static thing. ;)" */
-          listOfAwesome.map(dev =>
+          programmers.map(dev =>
             <div key={dev.id}>
-              {dev.name} <button onClick={() => { /* set the featured id passing dev.id */ }}>Feature</button>
+              {dev.name} <button onClick={() => { setFeatured(dev.id); /* set the featured id passing dev.id */ }}>Feature</button>
             </div>
           )
         }
@@ -59,7 +70,7 @@ export default function Programmers() {
       {
         // Ternaries are fantastic to render "one thing or the other" depending on the "truthiness" of something.
         // Pseudo-code: if the currently featured id is truthy render div 1, otherwise render div 2. Fix!
-        false
+        featured != undefined
           ? <div style={style}>🎉 Let&apos;s celebrate {getNameOfFeatured()}! 🥳</div>
           : <div style={style}>Pick an awesome programmer</div>
       }
