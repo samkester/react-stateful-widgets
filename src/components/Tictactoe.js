@@ -12,6 +12,22 @@ export default function Tictactoe() {
         return " ";
     }
 
+    function resetTiles(){
+        setPlayerSquares([]);
+        setCPUSquares([]);
+    }
+
+    function clickable(tile){
+        if(playerSquares.includes(tile)) return false;
+        if(CPUSquares.includes(tile)) return false;
+        return true;
+    }
+
+    function playerClickOn(tile){
+        if(!clickable(tile)) return;
+        setPlayerSquares([...playerSquares, tile]);
+    }
+
     return (
         <div className='widget-squares container'>
             <h2>Tic-Tac-Toe</h2>
@@ -23,13 +39,14 @@ export default function Tictactoe() {
                         id={tile}
                         key={tile}
                         className="square"
+                        onClick = {clickable ? () => playerClickOn(tile) : undefined}
                     >{textFor(tile)}
                     </div>
                 )
             }
             </div>
             <p>I am the game result text.</p>
-            <button>Reset</button>
+            <button onClick = {resetTiles}>Reset</button>
         </div>
     );
 }
