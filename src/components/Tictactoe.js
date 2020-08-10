@@ -2,7 +2,8 @@ import React, {useState} from 'react';
 
 const gameStateReady = "";
 const gameStatePlayerWin = "You won!";
-const gameStatCPUWin = "You lost!";
+const gameStateCPUWin = "You lost!";
+const gameStateTied = "A tie...";
 
 const tilesInWin = [
     [0, 1, 2],
@@ -35,21 +36,6 @@ export default function Tictactoe() {
         return gameState === gameStateReady;
     }
 
-    function checkGameState(currentSpaces){
-        const wins = winProgress(currentSpaces);
-
-        //console.log(wins);
-        for(let i = 0; i < wins.length; i++){
-            if(wins[i] === 3){
-                //console.log("player wins");
-                setGameState(gameStatePlayerWin);
-            }
-            else if(wins[i] === -3){
-                setGameState(gameStatCPUWin);
-            }
-        }
-    }
-
     function winProgress(currentSpaces){
         // there are 8 winning combinations: 3 rows, 3 columns, and 2 diagonals
         const wins = [0, 0, 0, 0, 0, 0, 0, 0];
@@ -69,20 +55,58 @@ export default function Tictactoe() {
         if(!clickable(tile)) return;
         const currentSpaces = [...gameSpaces]; // be sure to make a copy via spreading, very important
         currentSpaces[tile] = 1;
-        // according to my research (=5 minutes on google) setState is asynchronous, so an updated gameSpaces
-        //   is not guaranteed to be updated when we call checkGameState later on. Sending the updated, 
-        //   non-stateful list to checkGameState makes sure that it's up to date.
+        // according to my research (=5 minutes on google) setState is asynchronous, so gameSpaces will not update instantly
+        //   the non-stateful currentSpaces list is a workaround for this
+        // since the whole sequence of player turn -> win check -> CPU turn -> win check appears atomic to the player,
+        //   it doesn't necessarily matter, as long as setGameSpaces is called before the end of the turn
 
-        // CPU turn...
-        if(!strategicCPUMove(currentSpaces))
-        {
-            randomCPUMove(currentSpaces);
+        if(checkPlayerWin(currentSpaces)){
+            setGameSpaces(currentSpaces);
+            return; // if the player wins, skip running the CPU turn
         }
-        // end CPU turn
-        //console.log(currentSpaces);
 
+        strategicCPUMove(currentSpaces);
         setGameSpaces(currentSpaces);
-        checkGameState(currentSpaces);
+        checkCPUWin(currentSpaces);
+        checkTies(currentSpaces);
+    }
+
+    function checkPlayerWin(currentSpaces){
+        const wins = winProgress(currentSpaces);
+
+        //console.log(wins);
+        for(let i = 0; i < wins.length; i++){
+            if(wins[i] === 3){
+                //console.log("player wins");
+                setGameState(gameStatePlayerWin);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function checkCPUWin(currentSpaces){
+        const wins = winProgress(currentSpaces);
+
+        //console.log(wins);
+        for(let i = 0; i < wins.length; i++){
+            if(wins[i] === -3){
+                setGameState(gameStateCPUWin);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function checkTies(currentSpaces){
+        // each turn consists of a player turn adding +1 to a tile, and a CPU turn adding -1
+        // therefore, the only way a turn can end with a non-zero total is if the player moved
+        // and the CPU didn't - at the end of the game
+        if(currentSpaces.reduce((total, item) => total + item) % 2 === 1) {
+            setGameState(gameStateTied);
+            return true;
+        }
+        return false;
     }
 
     // this function returns TRUE if it was able to make a move, FALSE otherwise
@@ -94,7 +118,7 @@ export default function Tictactoe() {
         for(let i = 0; i < wins.length; i++){
             if(wins[i] === -2){
                 playUnclaimedCPUMoveInWin(i, currentSpaces); // CPU can win with this move; play it immediately
-                return true;
+                return;
             }
             else if(wins[i] === 2){
                 canInterruptPlayerWin.push(i); // player can win with this move; interrupt it if CPU can't win with any other move
@@ -105,10 +129,10 @@ export default function Tictactoe() {
             // interrupt the first imminent player win, if any
             // if there is more than one, CPU loses to perfect play anyway so don't worry about which one
             playUnclaimedCPUMoveInWin(canInterruptPlayerWin[0], currentSpaces);
-            return true;
+            return;
         }
 
-        return false; // unable to make a strategic move, so fall back to a random one
+        randomCPUMove(currentSpaces);
     }
 
     function playUnclaimedCPUMoveInWin(win, currentSpaces){
