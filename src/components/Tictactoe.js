@@ -63,11 +63,23 @@ export default function Tictactoe() {
         //   non-stateful list to checkGameState makes sure that it's up to date.
 
         // CPU turn...
-
+        randomCPUMove(currentSpaces);
         // end CPU turn
+        console.log(currentSpaces);
 
         setGameSpaces(currentSpaces);
         checkGameState(currentSpaces);
+    }
+
+    function randomCPUMove(currentSpaces){
+        const available = currentSpaces.reduce(((prev, item, index) => {
+            if(item === 0) {prev.push(index)} return prev;
+        }), []); // returns an array of only spaces that are available
+
+        currentSpaces[available[Math.floor(Math.random() * available.length)]] -= 1;
+        //            ^ this whole mess = "random element in 'available'" ^
+
+        //console.log(available);
     }
 
     return (
